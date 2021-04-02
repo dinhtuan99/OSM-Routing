@@ -1,0 +1,17 @@
+<div id="cont">
+  <!-- <div id="routeInfo">
+    <ng-container>
+      <button mat-raised-button color="primary" (click)="loadComponent()">
+        Xem thông tin tuyến đường
+      </button>
+    </ng-container>
+    <ng-template #template></ng-template>
+  </div> -->
+  <div
+    id="map"
+    leaflet
+    (leafletMapReady)="initializeMap($event)"
+    [leafletOptions]="options"
+    (leafletClick)="onMapClick($event)"
+  ></div>
+</div>

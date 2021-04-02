@@ -1,0 +1,68 @@
+<div class="fromTo">
+  <mat-grid-list cols="4" rowHeight="60px">
+    <mat-grid-tile [colspan]="3" [rowspan]="1">
+      <mat-form-field class="example-full-width">
+        <mat-label>FROM</mat-label>
+        <input
+          [ngModel]="mapPointStart.name"
+          matInput
+          (keyup.enter)="addressLookup($any($event.target).value, 'start')"
+          [matAutocomplete]="auto"
+        />
+        <mat-autocomplete #auto="matAutocomplete">
+          <mat-option
+            *ngFor="let result of searchResults"
+
+            (click)="selectResult(result)"
+          >
+            {{ result.displayName }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </mat-grid-tile>
+
+    <mat-grid-tile [colspan]="1" [rowspan]="2">
+      <button
+        (click)="reverseLocation($event)"
+        mat-icon-button
+        aria-label="Example icon button with a vertical three dot icon"
+      >
+        <i class="fas fa-exchange-alt"></i>
+      </button>
+    </mat-grid-tile>
+
+    <mat-grid-tile [colspan]="3" [rowspan]="1">
+      <mat-form-field class="example-full-width">
+        <mat-label>TO</mat-label>
+        <input
+          [ngModel]="mapPointDest.name"
+          matInput
+          (keyup.enter)="addressLookup($any($event.target).value, 'dest')"
+          [matAutocomplete]="auto"
+        />
+        <mat-autocomplete #auto="matAutocomplete">
+          <mat-option
+            *ngFor="let result of searchResults"
+            (click)="selectResult(result)"
+          >
+            {{ result.displayName }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </mat-grid-tile>
+  </mat-grid-list>
+  <h3 style="padding-left: 10px">Quãng đường: <span style="font-weight: bold">{{this.sumLength.toFixed(1)}} km</span></h3>
+</div>
+<div class="routeInfoTable">
+  <table mat-table [dataSource]="route">
+    <ng-container matColumnDef="name">
+      <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+    </ng-container>
+    <ng-container matColumnDef="meter">
+      <td mat-cell *matCellDef="let element">
+        {{ element.meter.toFixed(3) * 1000 }} m
+      </td>
+    </ng-container>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+</div>

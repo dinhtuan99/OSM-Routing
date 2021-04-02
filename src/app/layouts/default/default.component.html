@@ -1,0 +1,19 @@
+<app-header (toggleSideBarForMe)="sideBarToggler()"></app-header>
+<div>
+<mat-drawer [opened]="sideBarOpen">
+  <app-sidebar
+    id="sidebar"
+    (searchInput)="fromOrTo($event)"
+    (locationSelected)="addItem($event)"
+    [mapPoint]="items"
+    [route]="route"
+  ></app-sidebar>
+</mat-drawer>
+</div>
+<app-dashboard
+  [selected]="selectResult"
+  [fromOrTo]="fromTo"
+  (newPoint)="addPoint($event)"
+  (newRoute)="newRoute($event)"
+>
+</app-dashboard>
