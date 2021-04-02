@@ -342,37 +342,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   }
 }
 
-  // private clearMap() { // làm mới bản đồ ( xóa  hết marker)
-  //   if (this.map.hasLayer(this.lastLayer)) this.map.removeLayer(this.lastLayer);
-  // }
-
-  // private controlMarker() { //Marker 2 điểm trên bản đồ
-  //   if (this.featureGroupMarker.getLayers().length == 2) {
-  //     this.featureGroupMarker.removeLayer(this.layerId[1]);
-  //     this.layerId.pop();
-  //     this.layerCor.pop();
-  //   }
-  // }
-
-
-
-  // getAddress (result: any) { //trả về vị trí trên bản đồ khi chọn địa điểm trên sidebar
-  //   debugger
-  //   this.updateMapPoint(result.latitude, result.longitude, result.displayName);
-  //   this.createMarker();
-  // }
-
-  // refreshSearchList (results: NominatimResponse[]) { //chưa dùng
-  //   this.results = results;
-  // }
-
-  // private initializeDefaultMapPoint() { //bỏ
-  //   this.mapPoint = {
-  //     name: this.mapPoint.name,
-  //     latitude: DEFAULT_LATITUDE,
-  //     longitude: DEFAULT_LONGITUDE
-  //   };
-  // }
 
 // thêm debugger để xem hàm có được nhảy vào hay ko
 
