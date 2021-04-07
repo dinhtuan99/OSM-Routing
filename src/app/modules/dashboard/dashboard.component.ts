@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnChanges, Output, EventEmitter, ViewChild, ViewContainerRef, ComponentFactoryResolver, ComponentRef, OnDestroy } from '@angular/core';
+import { Component, OnInit,SimpleChanges, Input, OnChanges, Output, EventEmitter, ViewChild, ViewContainerRef, ComponentFactoryResolver, ComponentRef, OnDestroy } from '@angular/core';
 import { icon, latLng, LeafletMouseEvent, Map, MapOptions, marker, tileLayer, control, Routing, geoJSON, layerGroup } from 'leaflet';
 import { DEFAULT_LATITUDE, DEFAULT_LONGITUDE } from '../../app.constants';
 import { MapPoint } from '../../shared/models/map-point.model';
@@ -25,6 +25,8 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   @Input()
   fromOrTo: any;
 
+  @Input()
+  mode: string = '';
   @Output()
   newPoint = new EventEmitter();
 
@@ -94,10 +96,12 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       this.componentRef.destroy();
     }
   }
-  ngOnChanges() { //nhận dữ liệu khi selected thay đổi
+  ngOnChanges(changes: SimpleChanges) { //nhận dữ liệu khi selected thay đổi
+
     if (this.selected) {
       console.log('Nhận dữ liệu sau khi chọn địa điểm từ Sidebar: ', this.selected)
       if (this.fromOrTo === "start") {
+        console.log("start");
         this.pointStartFirst = true;
         this.updateMapPoint(this.selected.latitude, this.selected.longitude, this.selected.displayName);
       } else {
@@ -108,7 +112,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
   initializeMap(map: Map) { // khởi tạo map
     this.map = map;
-    control.scale().addTo(this.map);
+    control.scale().setPosition('topright').addTo(this.map);
     this.map.zoomControl.setPosition('bottomright')
   }
 
@@ -145,6 +149,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private updateMapPoint(latitude: number, longitude: number, name?: string) {  // cập nhật điểm trên bản đồ
+
     if (this.pointStartFirst) {
       this.mapPointStart = {
         latitude: latitude,
@@ -154,6 +159,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       this.isSource = true;
       this.getVertex(this.mapPointStart);
       this.createMarkerStart();
+      this.pointStartFirst = false;
     } else {
       this.mapPointDest = {
         latitude: latitude,
@@ -234,14 +240,38 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   pathLayer = geoJSON();
   // function to get nearest vertex to the passed point
   public getVertex(selectedPoint: any) {
-    this.geoServerService.getData(selectedPoint).subscribe(results => {
-      this.loadVertex(results, this.isSource)
-      console.log(results);
-
-    });
+    switch (this.mode){
+      case '':
+        this.geoServerService.getVertexMotorcycle(selectedPoint).subscribe(results => {
+          this.loadVertex(results)
+          console.log(results);
+        });
+        break;
+      case 'car':
+        this.geoServerService.getVertexCar(selectedPoint).subscribe(results => {
+          this.loadVertex(results)
+          console.log(results);
+        });
+        break;
+      case 'motorcycle':
+        this.geoServerService.getVertexMotorcycle(selectedPoint).subscribe(results => {
+          this.loadVertex(results)
+          console.log(results);
+        });
+        break;
+      case 'foot':
+        this.geoServerService.getVertexFoot(selectedPoint).subscribe(results => {
+          this.loadVertex(results)
+          console.log(results);
+        });
+        break;
+      default:
+        console.log("Chưa chọn phương tiện để đi!");
+        break;
+    }
   }
 
-  public loadVertex(response: any, isSource: any) {
+  public loadVertex(response: any) {
     var features = response.features;
     //this.map.removeLayer(this.pathLayer);
     if (this.isSource) {
@@ -256,7 +286,27 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
   public getRoute(source: any, target: any) {
-    this.geoServerService.getRoute(source, target).subscribe(results => {
+    switch (this.mode){
+      case '':
+        this.getRouteMotorcycle(source, target);
+        break;
+      case 'car':
+        this.getRouteCar(source, target);
+        break;
+      case 'motorcycle':
+        this.getRouteMotorcycle(source, target);
+        break;
+      case 'foot':
+        this.getRouteFoot(source, target);
+        break;
+      default:
+        console.log("Chưa chọn phương tiện để đi!");
+        break;
+    }
+  }
+
+  private getRouteCar(source: any, target: any) {
+    this.geoServerService.getRouteCar(source, target).subscribe(results => {
       console.log("Path từ Serve: ", results);
       this.map.removeLayer(this.pathLayer);
 
@@ -275,70 +325,152 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       let sumLength: number = 0;
 
       let length: number = 0;
+      let time: number = 0.0;
 
+      this.arrRoute = [];
 
       for (let i = 0; i < results.totalFeatures; i++) {
         // đưa đường thu được vào arrName
-        arrName.push(
-          {
-            name: results.features[i].properties.name,
-            meter: results.features[i].properties.length
-          }
-        );
-
-        //thêm tên cho các phần tử chưa có tên
-        if (arrName[i].name === null) {
-          this.nominatimService.latlonLookup(results.features[i].geometry.coordinates[0][0][1],
-            results.features[i].geometry.coordinates[0][0][0]).subscribe(results => {
-              let name = results.displayName.split(", ")
-              if (arrName[i].meter == 0) {
-                arrName[i].name = "Đi qua".concat(name[0] + ", " + name[1]);
-              } else {
-                arrName[i].name = name[0].concat(", " + name[1]);
-              }
-            });
-        }
-
         sumLength += results.features[i].properties.length;
-
-        //xử lí điểm có tên đường trùng nhau
-        if (!this.isExist(this.arrRoute, arrName[i].name)) {
-          this.arrRoute.push(arrName[i]);
-          coordinates = latLng([results.features[i].geometry.coordinates[0][0][1], results.features[i].geometry.coordinates[0][0][0]]);
-          this.markerRoute.addLayer(marker(coordinates).setIcon(mapIcon));
-        }
       }
 
-      //cộng lại độ dài sau khi gộp
-      for (let j = 0; j < this.arrRoute.length; j++) {
-        this.arrRoute[j].meter = 0;
-        for (let i = 0; i < results.totalFeatures; i++) {
-          if (this.arrRoute[j].name === arrName[i].name) {
-            this.arrRoute[j].meter += arrName[i].meter;
-          }
-        }
-      }
+      arrName = this.getResults(results, arrName);
+      this.addName(results, arrName);
+      //xử lí điểm có tên đường trùng nhau
 
-      // thêm "Đi qua" cho đường có độ dài bằng 0
-      for (let i = 0; i < this.arrRoute.length; i++) {
-        if (this.arrRoute[i].meter == 0) {
-          this.arrRoute[i].name = "Đi qua ".concat(this.arrRoute[i].name);
-          //this.arrRoute[i].meter = 0;
-        }
-        length += this.arrRoute[i].meter;
-      }
+      console.log(arrName.filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i));
+
+      this.updateLength(this.arrRoute, arrName);
+
       console.log("Tổng quãng đường:", sumLength, " ", length);
       this.map.addLayer(this.markerRoute);
-      this.newRoute.emit(this.arrRoute);
+      this.newRoute.emit(arrName);
     })
   }
-  private isExist(arr: routePoint[], name: any) {
-    for (let i = 0; i < arr.length; i++) {
-      if (arr[i].name === name) {
-        return true;
+
+  private getRouteMotorcycle(source: any, target: any) {
+    this.geoServerService.getRouteMotorcycle(source, target).subscribe(results => {
+      console.log("Path từ Serve: ", results);
+      this.map.removeLayer(this.pathLayer);
+
+      this.markerRoute.clearLayers();
+      this.map.removeLayer(this.markerRoute);
+
+      this.pathLayer = geoJSON(results);
+      this.map.addLayer(this.pathLayer);
+
+      const mapIcon = this.getDotIcon();
+
+      let coordinates: any;
+
+      let arrName: routePoint[] = []
+
+      let sumLength: number = 0;
+
+      let length: number = 0;
+      let time: number = 0.0;
+
+      this.arrRoute = [];
+
+      for (let i = 0; i < results.totalFeatures; i++) {
+        // đưa đường thu được vào arrName
+        sumLength += results.features[i].properties.length;
+      }
+
+      arrName = this.getResults(results, arrName);
+      this.addName(results, arrName);
+      //xử lí điểm có tên đường trùng nhau
+
+      console.log(arrName.filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i));
+
+      this.updateLength(this.arrRoute, arrName);
+
+      console.log("Tổng quãng đường:", sumLength, " ", length);
+      this.map.addLayer(this.markerRoute);
+      this.newRoute.emit(arrName);
+    })
+  }
+
+  private getRouteFoot(source: any, target: any) {
+    this.geoServerService.getRouteFoot(source, target).subscribe(results => {
+      console.log("Path từ Serve: ", results);
+      this.map.removeLayer(this.pathLayer);
+
+      this.markerRoute.clearLayers();
+      this.map.removeLayer(this.markerRoute);
+
+      this.pathLayer = geoJSON(results);
+      this.map.addLayer(this.pathLayer);
+
+      const mapIcon = this.getDotIcon();
+
+      let coordinates: any;
+
+      let arrName: routePoint[] = []
+
+      let sumLength: number = 0;
+
+      let length: number = 0;
+      let time: number = 0.0;
+
+      this.arrRoute = [];
+
+      for (let i = 0; i < results.totalFeatures; i++) {
+        // đưa đường thu được vào arrName
+        sumLength += results.features[i].properties.length;
+      }
+
+      arrName = this.getResults(results, arrName);
+      this.addName(results, arrName);
+      //xử lí điểm có tên đường trùng nhau
+
+      console.log(arrName.filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i));
+
+      this.updateLength(this.arrRoute, arrName);
+
+      console.log("Tổng quãng đường:", sumLength, " ", length);
+      this.map.addLayer(this.markerRoute);
+      this.newRoute.emit(arrName);
+    })
+  }
+  private addName(results: any, arrName: routePoint[]) {
+    for (let i = 0; i < results.totalFeatures; i++) {
+      //thêm tên cho các phần tử chưa có tên
+      if (arrName[i].name == null) {
+        this.nominatimService.latlonLookup(results.features[i].geometry.coordinates[0][0][1],
+          results.features[i].geometry.coordinates[0][0][0]).subscribe(results => {
+            let name = results.displayName.split(", ")
+            if (arrName[i].meter == 0) {
+              arrName[i].name = "Đi qua ".concat(name[0] + ", " + name[1]);
+            } else {
+              arrName[i].name = name[0].concat(", " + name[1]);
+            }
+          });
       }
     }
-    return false;
+  }
+  private getResults(results: any, arrName: routePoint[]) {
+    for (let i = 0; i < results.totalFeatures; i++) {
+      // đưa đường thu được vào arrName
+      arrName.push(
+        {
+          name: results.features[i].properties.name,
+          meter: results.features[i].properties.length
+        }
+      );
+    }
+    return arrName;
+  }
+  private updateLength(arrRoute: routePoint[], arrName: routePoint[]) {
+    //cộng lại độ dài sau khi gộp
+    for (let j = 0; j < this.arrRoute.length; j++) {
+      this.arrRoute[j].meter = 0;
+      for (let i = 0; i < arrName.length; i++) {
+        if (this.arrRoute[j].name === arrName[i].name) {
+          this.arrRoute[j].meter += arrName[i].meter;
+        }
+      }
+    }
   }
 }
 

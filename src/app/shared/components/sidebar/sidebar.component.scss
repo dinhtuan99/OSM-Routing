@@ -1,13 +1,14 @@
 
 .fromTo{
   position: fixed;
-  width:27%;
+  width:360px;
   background-color: rgb(255, 255, 255);
   z-index: 3000;
 }
 
 .mat-form-field{
   margin-left: 10px;
+  margin-right: 10px;
 }
 
 .example-form {
@@ -53,11 +54,22 @@ table.mat-table.cdk-table {
 }
 
 .routeInfoTable{
-  overflow: hidden;
-  margin-top: 140px;
-  height: calc(100% - 3*60px + 6px);
+  overflow: auto;
+  margin-top: 230px;
+  height: calc(100% - 3*60px + 6px - 55px);
   padding-left: 10px;
+
 }
 th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:first-of-type {
   padding-left: 0px;
+}
+
+// .mat-button-toggle-group-appearance-standard .mat-button-toggle+.mat-button-toggle {
+//   border-left: none;
+
+
+// }
+.mat-button-toggle-standalone.mat-button-toggle-appearance-standard, .mat-button-toggle-group-appearance-standard {
+  /* border: solid 1px rgba(0,0,0,.12); */
+  border: none;
 }

@@ -21,13 +21,15 @@ export class DefaultComponent implements OnInit {
   fromTo: any;
   route: routePoint[] = [];
   constructor() { }
-
+  type: string = '';
   ngOnInit() { }
   addItem(newItem: NominatimResponse) {
     this.selectResult = newItem;
     console.log("Default: " + this.selectResult.latitude);
   }
-
+  mode(type: string){
+    this.type = type;
+  }
   fromOrTo(location: any) {
     this.fromTo = location;
   }

@@ -25,12 +25,16 @@ export class SidebarComponent implements OnChanges {
   @Output()
   searchInput = new EventEmitter();
 
+  @Output()
+  modeSelected = new EventEmitter();
+
   @Input()
   mapPoint: MapPoint = new MapPoint;
 
   @Input()
   route!: routePoint[];
 
+  routing: routePoint[] = [];
   sumLength: number = 0;
 
   locationName: string = '';
@@ -47,6 +51,7 @@ export class SidebarComponent implements OnChanges {
 
   lookupResults!: NominatimResponse;
 
+  type: string = '';
   constructor(private nominatimService: NominatimService) {
   }
 
@@ -84,23 +89,29 @@ export class SidebarComponent implements OnChanges {
       this.mapPoint.latitude = results.latitude;
       this.mapPoint.longitude = results.longitude;
       this.mapPoint.name = results.displayName;
+      this.modeSelected.emit(this.type);
 
       if (this.divide) {
         this.mapPointStart = this.mapPoint;
+        this.locationSelected.emit(results);
+        this.searchInput.emit("start");
       } else {
         this.mapPointDest = this.mapPoint;
+        this.locationSelected.emit(results);
+        this.searchInput.emit("dest");
       }
       this.divide = false;
-      this.locationSelected.emit(results);
     });
   };
   selectResult(result: NominatimResponse) {
+    this.modeSelected.emit(this.type);
     this.locationSelected.emit(result);
     if (this.locationName === "start") {
       this.searchInput.emit(this.locationName);
       this.mapPointStart.latitude = result.latitude;
       this.mapPointStart.longitude = result.longitude;
       this.mapPointStart.name = result.displayName;
+
     } else if (this.locationName === "dest") {
       this.searchInput.emit(this.locationName);
       this.mapPointDest.latitude = result.latitude;
@@ -115,21 +126,25 @@ export class SidebarComponent implements OnChanges {
     this.mapPointDest = this.mapPointStart;
     this.mapPointStart = temp;
 
-    // let result!: NominatimResponse;
+    let result!: NominatimResponse;
 
-    // result.latitude = this.mapPointStart.latitude;
-    // result.longitude = this.mapPointStart.longitude;
-    // result.displayName = this.mapPointStart.name;
+    result.latitude = this.mapPointStart.latitude;
+    result.longitude = this.mapPointStart.longitude;
+    result.displayName = this.mapPointStart.name;
 
-    // this.locationSelected.emit(result);
-    // this.searchInput.emit("start");
+    this.locationSelected.emit(result);
+    this.searchInput.emit("start");
 
-    // result.latitude = this.mapPointDest.latitude;
-    // result.longitude = this.mapPointDest.longitude;
-    // result.displayName = this.mapPointDest.name;
+    result.latitude = this.mapPointDest.latitude;
+    result.longitude = this.mapPointDest.longitude;
+    result.displayName = this.mapPointDest.name;
 
-    // this.locationSelected.emit(result);
-    // this.searchInput.emit("dest");
+    this.locationSelected.emit(result);
+    this.searchInput.emit("dest");
+  }
+
+  mode (type : string){
+    this.type = type;
   }
 }
 

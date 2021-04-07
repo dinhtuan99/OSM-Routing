@@ -5,6 +5,7 @@
     id="sidebar"
     (searchInput)="fromOrTo($event)"
     (locationSelected)="addItem($event)"
+    (modeSelected) = "mode($event)"
     [mapPoint]="items"
     [route]="route"
   ></app-sidebar>
@@ -13,6 +14,7 @@
 <app-dashboard
   [selected]="selectResult"
   [fromOrTo]="fromTo"
+  [mode] = "type"
   (newPoint)="addPoint($event)"
   (newRoute)="newRoute($event)"
 >

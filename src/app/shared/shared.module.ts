@@ -18,7 +18,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { RouterModule } from '@angular/router';
 import { MatGridListModule } from '@angular/material/grid-list';
-
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 @NgModule({
   declarations: [
     HeaderComponent,
@@ -41,7 +41,8 @@ import { MatGridListModule } from '@angular/material/grid-list';
     MatDividerModule,
     MatAutocompleteModule,
     ReactiveFormsModule,
-    MatGridListModule
+    MatGridListModule,
+    MatButtonToggleModule
   ],
   exports:[
     HeaderComponent,
