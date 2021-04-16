@@ -1,12 +1,9 @@
-import { Component, OnInit,SimpleChanges, Input, OnChanges, Output, EventEmitter, ViewChild, ViewContainerRef, ComponentFactoryResolver, ComponentRef, OnDestroy } from '@angular/core';
-import { icon, latLng, LeafletMouseEvent, Map, MapOptions, marker, tileLayer, control, Routing, geoJSON, layerGroup } from 'leaflet';
+import { Component, OnInit,SimpleChanges, Input, OnChanges, Output, EventEmitter } from '@angular/core';
+import { icon, latLng, LeafletMouseEvent, Map, MapOptions, marker, tileLayer, control, geoJSON, layerGroup } from 'leaflet';
 import { DEFAULT_LATITUDE, DEFAULT_LONGITUDE } from '../../app.constants';
 import { MapPoint } from '../../shared/models/map-point.model';
 import { NominatimResponse } from '../../shared/models/nominatim-response.model';
 import { GeoServerService } from '../../services/geoServer-service'
-import 'leaflet-routing-machine';
-import { RoutingInfoComponent } from 'src/app/modules/routing-info/routing-info.component'
-import { RoutingInfoService } from 'src/app/services/routing-info.service';
 import { NominatimService } from '../../../app/services/nominatim-service';
 
 interface routePoint {
@@ -18,7 +15,9 @@ interface routePoint {
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
+export class DashboardComponent implements OnInit, OnChanges {
+  @Input()
+  search: any;
   @Input()
   selected: any;
 
@@ -26,7 +25,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   fromOrTo: any;
 
   @Input()
-  mode: string = '';
+  mode!: string;
   @Output()
   newPoint = new EventEmitter();
 
@@ -38,7 +37,8 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
   startLayer: any;
   destLayer: any;
-
+  searchLayer: any;
+  mapPointSearch: MapPoint = new MapPoint;
   mapPoint: MapPoint = new MapPoint;
   mapPointStart: MapPoint = new MapPoint;
   mapPointDest: MapPoint = new MapPoint;
@@ -51,62 +51,51 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   geoserverUrl = "http://127.0.0.1:8080/geoserver/routing";
   selectedPoint = null;
 
-  source = null;
-  target = null;
+  private source: any;
+  private target: any;
   isSource = true;
 
   arrRoute: routePoint[] = [];
 
-  childLoaded: boolean = false;
-  componentRef!: ComponentRef<RoutingInfoComponent>;
-  @ViewChild('template', { read: ViewContainerRef })
-  viewTemplate!: ViewContainerRef;
-  ViewContainerRef: any;
-
   constructor(
     private geoServerService: GeoServerService,
-    private cfr: ComponentFactoryResolver,
-    private routingService: RoutingInfoService,
     private nominatimService: NominatimService
   ) { }
 
-  loadComponent() {
-    const componentFactory = this.cfr.resolveComponentFactory(RoutingInfoComponent);
-    this.componentRef = this.viewTemplate.createComponent(componentFactory);
-    // (this.componentRef.instance as any).loaded.subscribe(() => {
-    //   this.childLoaded = true;
-    // });
-    this.componentRef.instance.name = this.arrRoute;
-  }
-
   ngOnInit() {
     this.initializeMapOptions();
-
-    this.routingService.close$.subscribe(reson => {
-      this.viewTemplate.clear();
-
-      if (this.componentRef) {
-        this.componentRef.destroy();
-      }
-    });
   }
-  ngOnDestroy() {
-    if (this.componentRef) {
-      this.componentRef.instance.name = [];
-      this.componentRef.destroy();
-    }
-  }
-  ngOnChanges(changes: SimpleChanges) { //nhận dữ liệu khi selected thay đổi
+  async ngOnChanges(changes: SimpleChanges) { //nhận dữ liệu khi selected thay đổi
 
     if (this.selected) {
-      console.log('Nhận dữ liệu sau khi chọn địa điểm từ Sidebar: ', this.selected)
-      if (this.fromOrTo === "start") {
-        console.log("start");
-        this.pointStartFirst = true;
-        this.updateMapPoint(this.selected.latitude, this.selected.longitude, this.selected.displayName);
-      } else {
-        this.updateMapPoint(this.selected.latitude, this.selected.longitude, this.selected.displayName);
+      if(changes.selected){
+        if (this.fromOrTo === "start") {
+          console.log('Nhận dữ liệu START sau khi chọn địa điểm từ Sidebar: ', this.selected)
+          this.pointStartFirst = true;
+          this.updateMapPoint(this.selected.latitude, this.selected.longitude, this.selected.displayName);
+
+        } else {
+          console.log('Nhận dữ liệu DEST sau khi chọn địa điểm từ Sidebar: ', this.selected)
+          this.updateMapPoint(this.selected.latitude, this.selected.longitude, this.selected.displayName);
+        }
       }
+    }
+    if(this.search){
+      if(changes.search){
+        this.updateMapPointSearch(this.search.latitude, this.search.longitude, this.search.displayName);
+      }
+    }
+    if(this.mode){
+
+        console.log("dash",this.mode);
+        this.isSource = true;
+        await this.getVertex(this.mapPointStart);
+        await this.getVertex(this.mapPointDest);
+        await this.getRoute(this.source, this.target);
+
+    //     setTimeout(()=>{
+    //       this.getRoute(this.source, this.target);
+    //  }, 5000);
     }
   }
 
@@ -147,17 +136,21 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       name: name ? name : this.mapPoint.name
     };
   }
-
+  private updateMapPointSearch(latitude: number, longitude: number, name?: string){
+    this.mapPointSearch = {
+      latitude: latitude,
+      longitude: longitude,
+      name: name ? name : this.mapPointSearch.name
+    };
+    this.createMarkerSearch();
+  }
   private updateMapPoint(latitude: number, longitude: number, name?: string) {  // cập nhật điểm trên bản đồ
-
     if (this.pointStartFirst) {
       this.mapPointStart = {
         latitude: latitude,
         longitude: longitude,
         name: name ? name : this.mapPointStart.name
       }
-      this.isSource = true;
-      this.getVertex(this.mapPointStart);
       this.createMarkerStart();
       this.pointStartFirst = false;
     } else {
@@ -166,13 +159,20 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
         longitude: longitude,
         name: name ? name : this.mapPointDest.name
       }
-      //this.isSource = false;
-      this.getVertex(this.mapPointDest);
       this.createMarkerDest();
     }
     this.pointStartFirst = false;
   }
-
+  private createMarkerSearch(){
+    if (this.searchLayer) {
+      this.map.removeLayer(this.searchLayer);
+    }
+    const mapIcon = this.getDefaultIcon();
+    const coordinates = latLng([this.mapPointSearch.latitude, this.mapPointSearch.longitude]);
+    this.searchLayer = marker(coordinates).setIcon(mapIcon).addTo(this.map);
+    this.searchLayer.bindPopup(this.mapPointSearch.name + " (" + this.mapPointSearch.latitude.toString() + ", " + this.mapPointSearch.longitude.toString() + ")").openPopup();
+    this.map.setView(coordinates, this.map.getZoom());
+  }
   private createMarkerDest() { //tạo marker điểm đến mới
     if (this.destLayer) {
       this.map.removeLayer(this.destLayer);
@@ -182,9 +182,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     this.destLayer = marker(coordinates).setIcon(mapIcon).addTo(this.map);
     this.destLayer.bindPopup(this.mapPointDest.name + " (" + this.mapPointDest.latitude.toString() + ", " + this.mapPointDest.longitude.toString() + ")");
     this.map.setView(coordinates, this.map.getZoom());
-
-    //this.routing(this.mapPointStart, this.mapPointDest);
-
   }
 
   private createMarkerStart() { //tạo marker điểm đi mới
@@ -198,10 +195,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     this.startLayer.bindPopup(this.mapPointStart.name + " (" + this.mapPointStart.latitude.toString() + ", " + this.mapPointStart.longitude.toString() + ")");
     this.map.setView(coordinates, this.map.getZoom());
 
-    // if (this.mapPointStart != null) {
-    //   this.getVertex(this.mapPointStart);
-    //   this.getVertex(this.mapPointDest);
-    // }
   }
 
   private getDefaultIcon() { // setting marker
@@ -226,44 +219,42 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       iconUrl: 'assets/dest-icon.png'
     });
   }
-  private routing(a: any, b: any) {
-    if (a != null && b != null) {
-      Routing.control({
-        waypoints: [
-          latLng(a.latitude, a.longitude), latLng(b.latitude, b.longitude)
-        ],
-        routeWhileDragging: true
-      }).addTo(this.map);
-    }
-  }
 
   pathLayer = geoJSON();
   // function to get nearest vertex to the passed point
-  public getVertex(selectedPoint: any) {
+  async getVertex(selectedPoint: any) {
     switch (this.mode){
       case '':
-        this.geoServerService.getVertexMotorcycle(selectedPoint).subscribe(results => {
-          this.loadVertex(results)
-          console.log(results);
-        });
+        this.geoServerService.getVertexMotorcycle(selectedPoint).toPromise().then(
+          results => {
+              this.loadVertex(results)
+              console.log(results);
+            }
+        )
         break;
       case 'car':
-        this.geoServerService.getVertexCar(selectedPoint).subscribe(results => {
-          this.loadVertex(results)
-          console.log(results);
-        });
+        await this.geoServerService.getVertexCar(selectedPoint).toPromise().then(
+          results => {
+              this.loadVertex(results)
+              console.log(results);
+            }
+        )
         break;
       case 'motorcycle':
-        this.geoServerService.getVertexMotorcycle(selectedPoint).subscribe(results => {
-          this.loadVertex(results)
-          console.log(results);
-        });
+        await this.geoServerService.getVertexMotorcycle(selectedPoint).toPromise().then(
+          results => {
+              this.loadVertex(results)
+              console.log(results);
+            }
+        )
         break;
       case 'foot':
-        this.geoServerService.getVertexFoot(selectedPoint).subscribe(results => {
-          this.loadVertex(results)
-          console.log(results);
-        });
+        await this.geoServerService.getVertexFoot(selectedPoint).toPromise().then(
+          results => {
+              this.loadVertex(results)
+              console.log(results);
+            }
+        )
         break;
       default:
         console.log("Chưa chọn phương tiện để đi!");
@@ -280,10 +271,9 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       this.target = features[0].properties.id;
     }
     this.isSource = false;
-    console.log(this.source + " " + this.target);
-    if (this.source != null && this.target != null) {
-      this.getRoute(this.source, this.target);
-    }
+    // if (this.source != null && this.target != null) {
+    //   this.getRoute(this.source, this.target);
+    // }
   }
   public getRoute(source: any, target: any) {
     switch (this.mode){
@@ -338,9 +328,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       this.addName(results, arrName);
       //xử lí điểm có tên đường trùng nhau
 
-      console.log(arrName.filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i));
-
-      this.updateLength(this.arrRoute, arrName);
+      //this.updateLength(arrName);
 
       console.log("Tổng quãng đường:", sumLength, " ", length);
       this.map.addLayer(this.markerRoute);
@@ -381,9 +369,8 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       this.addName(results, arrName);
       //xử lí điểm có tên đường trùng nhau
 
-      console.log(arrName.filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i));
 
-      this.updateLength(this.arrRoute, arrName);
+      //this.updateLength(arrName);
 
       console.log("Tổng quãng đường:", sumLength, " ", length);
       this.map.addLayer(this.markerRoute);
@@ -424,9 +411,8 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       this.addName(results, arrName);
       //xử lí điểm có tên đường trùng nhau
 
-      console.log(arrName.filter((v, i, a) => a.findIndex(t => (t.name === v.name)) === i));
-
-      this.updateLength(this.arrRoute, arrName);
+      // this.arrRoute = this.updateLength(arrName);
+      // console.log(this.arrRoute);
 
       console.log("Tổng quãng đường:", sumLength, " ", length);
       this.map.addLayer(this.markerRoute);
@@ -461,16 +447,15 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     }
     return arrName;
   }
-  private updateLength(arrRoute: routePoint[], arrName: routePoint[]) {
+  private updateLength(arrName: routePoint[]) {
     //cộng lại độ dài sau khi gộp
-    for (let j = 0; j < this.arrRoute.length; j++) {
-      this.arrRoute[j].meter = 0;
-      for (let i = 0; i < arrName.length; i++) {
-        if (this.arrRoute[j].name === arrName[i].name) {
-          this.arrRoute[j].meter += arrName[i].meter;
+      for (let i = 0; i < arrName.length-1; i++) {
+        if (arrName[i].name === arrName[i+1].name) {
+          arrName[i].meter = arrName[i].meter + arrName[i+1].meter;
+          arrName.splice(arrName.indexOf(arrName[i+1]), 1);
         }
       }
-    }
+      return arrName;
   }
 }
 

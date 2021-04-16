@@ -16,7 +16,7 @@ interface routePoint {
   styleUrls: ['./sidebar.component.scss']
 })
 export class SidebarComponent implements OnChanges {
-
+  @Output() closeSideBarEv: EventEmitter<any> = new EventEmitter();
   searchResults: NominatimResponse[] = [];
 
   @Output()
@@ -89,7 +89,6 @@ export class SidebarComponent implements OnChanges {
       this.mapPoint.latitude = results.latitude;
       this.mapPoint.longitude = results.longitude;
       this.mapPoint.name = results.displayName;
-      this.modeSelected.emit(this.type);
 
       if (this.divide) {
         this.mapPointStart = this.mapPoint;
@@ -104,19 +103,19 @@ export class SidebarComponent implements OnChanges {
     });
   };
   selectResult(result: NominatimResponse) {
-    this.modeSelected.emit(this.type);
     this.locationSelected.emit(result);
     if (this.locationName === "start") {
       this.searchInput.emit(this.locationName);
       this.mapPointStart.latitude = result.latitude;
       this.mapPointStart.longitude = result.longitude;
       this.mapPointStart.name = result.displayName;
-
+      this.divide = false;
     } else if (this.locationName === "dest") {
       this.searchInput.emit(this.locationName);
       this.mapPointDest.latitude = result.latitude;
       this.mapPointDest.longitude = result.longitude;
       this.mapPointDest.name = result.displayName;
+      this.divide = true;
     }
     this.searchResults = [];
   }
@@ -145,6 +144,11 @@ export class SidebarComponent implements OnChanges {
 
   mode (type : string){
     this.type = type;
+    this.modeSelected.emit(this.type);
+  }
+
+  closeSidebar() {
+    this.closeSideBarEv.emit();
   }
 }
 

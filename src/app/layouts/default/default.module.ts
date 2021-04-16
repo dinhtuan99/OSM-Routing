@@ -12,14 +12,13 @@ import { FormsModule } from '@angular/forms';
 import { GeoServerService } from 'src/app/services/geoServer-service';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
-import { RoutingInfoComponent } from 'src/app/modules/routing-info/routing-info.component';
-import { RoutingInfoService } from 'src/app/services/routing-info.service';
 import { MatButtonModule } from '@angular/material/button';
+import { AboutComponent } from 'src/app/modules/about/about.component';
 @NgModule({
   declarations: [
     DefaultComponent,
     DashboardComponent,
-    RoutingInfoComponent
+    AboutComponent
   ],
   imports: [
     CommonModule,
@@ -35,11 +34,7 @@ import { MatButtonModule } from '@angular/material/button';
   ],
   providers:[
     NominatimService,
-    GeoServerService,
-    RoutingInfoService
-  ],
-  entryComponents:[
-    RoutingInfoComponent
+    GeoServerService
   ]
 })
 export class DefaultModule { }

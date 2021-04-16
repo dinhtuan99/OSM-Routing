@@ -1,15 +1,11 @@
 <mat-toolbar color="primary">
   <mat-toolbar-row>
-      <button mat-icon-button (click)="toggleSideBar()">
-          <mat-icon>menu</mat-icon>
-      </button>
-
-      <span> HỆ THỐNG DẪN ĐƯỜNG 1.0 </span>
+      <span style="padding-left: 10px;" > HỆ THỐNG DẪN ĐƯỜNG 1.0 </span>
 
       <div fxFlex fxLayout="row" fxLayoutAlign="flex-end">
           <ul fxLayout="row" fxLayoutGap="20px">
               <li>
-                  <button mat-icon-button>
+                  <button mat-icon-button routerLinkActive="active" routerLink="/about">
                       <mat-icon>help_outline</mat-icon>
                   </button>
               </li>

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from './components/header/header.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { SearchbarComponent } from './components/searchbar/searchbar.component';
 import { FormsModule, ReactiveFormsModule} from '@angular/forms';
 
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -22,7 +23,8 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 @NgModule({
   declarations: [
     HeaderComponent,
-    SidebarComponent
+    SidebarComponent,
+    SearchbarComponent
   ],
   imports: [
     CommonModule,
@@ -46,7 +48,8 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
   ],
   exports:[
     HeaderComponent,
-    SidebarComponent
+    SidebarComponent,
+    SearchbarComponent
   ]
 })
 export class SharedModule { }

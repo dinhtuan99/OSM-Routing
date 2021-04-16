@@ -15,9 +15,11 @@ interface routePoint {
 })
 export class DefaultComponent implements OnInit {
   items: MapPoint = new MapPoint;
-  sideBarOpen = true;
+  sideBarOpen = false;
+  sideBarClose = true;
   results!: NominatimResponse[];
   selectResult: any;
+  search: any;
   fromTo: any;
   route: routePoint[] = [];
   constructor() { }
@@ -27,6 +29,10 @@ export class DefaultComponent implements OnInit {
     this.selectResult = newItem;
     console.log("Default: " + this.selectResult.latitude);
   }
+  searchResult(result: NominatimResponse){
+    this.search = result;
+    console.log("Default: " + this.search.latitude);
+  }
   mode(type: string){
     this.type = type;
   }
@@ -34,7 +40,10 @@ export class DefaultComponent implements OnInit {
     this.fromTo = location;
   }
   sideBarToggler() {
-    this.sideBarOpen = !this.sideBarOpen;
+    this.sideBarOpen = true;
+  }
+  closeSideBarDf(){
+    this.sideBarOpen  = false;
   }
   refreshSearchList(results: NominatimResponse[]) {
     this.results = results;

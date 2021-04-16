@@ -12,8 +12,8 @@ export class NominatimService {
   }
 
   addressLookup(req?: any): Observable<NominatimResponse[]> {
-    let url = `http://10.159.21.212:5307/search?format=json&q=${req}&${DEFAULT_VIEW_BOX}&bounded=1`;
-    //let url = `https://${BASE_NOMINATIM_URL}/search?format=json&q=${req}&${DEFAULT_VIEW_BOX}&bounded=1`;
+    //let url = `http://10.159.21.212:5307/search?format=json&q=${req}&${DEFAULT_VIEW_BOX}&bounded=1`;
+    let url = `http://${BASE_NOMINATIM_URL}/search?format=json&q=${req}&${DEFAULT_VIEW_BOX}&bounded=1`;
     return this.http
       .get(url).pipe(
         map((data: any) => data.map((item: any) => new NominatimResponse(
@@ -25,8 +25,8 @@ export class NominatimService {
       )
   }
   latlonLookup(lat?: any, lon?: any): Observable<NominatimResponse> {
-    let url = `http://10.159.21.212:5307/reverse?format=json&lat=${lat}&lon=${lon}`;
-    //let url = `https://${BASE_NOMINATIM_URL}/reverse?format=json&lat=${lat}&lon=${lon}`;
+    //let url = `http://10.159.21.212:5307/reverse?format=json&lat=${lat}&lon=${lon}`;
+    let url = `http://${BASE_NOMINATIM_URL}/reverse?format=json&lat=${lat}&lon=${lon}`;
     return this.http
       .get(url).pipe(
         map((data: any) => new NominatimResponse(

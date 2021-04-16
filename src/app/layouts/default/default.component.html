@@ -1,18 +1,26 @@
-<app-header (toggleSideBarForMe)="sideBarToggler()"></app-header>
+<app-header ></app-header>
+<app-searchbar id="searchbar"
+  (toggleSideBarForMe)="sideBarToggler()"
+  (locationSearch) = "searchResult($event)"  >
+
+</app-searchbar>
 <div>
 <mat-drawer [opened]="sideBarOpen">
   <app-sidebar
     id="sidebar"
+    (closeSideBarEv)="closeSideBarDf()"
     (searchInput)="fromOrTo($event)"
     (locationSelected)="addItem($event)"
     (modeSelected) = "mode($event)"
     [mapPoint]="items"
     [route]="route"
   ></app-sidebar>
+
 </mat-drawer>
 </div>
 <app-dashboard
   [selected]="selectResult"
+  [search] = "search"
   [fromOrTo]="fromTo"
   [mode] = "type"
   (newPoint)="addPoint($event)"

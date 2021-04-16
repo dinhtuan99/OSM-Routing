@@ -2,15 +2,18 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DefaultComponent } from './layouts/default/default.component';
 import { DashboardComponent } from './modules/dashboard/dashboard.component';
-
+import { AboutComponent } from './modules/about/about.component';
 const routes: Routes = [{
-  path:'',
+  path: '',
   component: DefaultComponent,
-  children:[{
-    path:'',
+  children: [{
+    path: '',
     component: DashboardComponent
+  }, {
+    path: 'about',
+    component: AboutComponent
   }]
-  }];
+}];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
